@@ -1,0 +1,11 @@
+syntax: glob
+*.pyc
+*.log
+build/*
+passwheel.egg-info/*
+dist/*
+passwheel.egg*
+.tox/*
+.cache/*
+.ropeproject/*
+venv/
