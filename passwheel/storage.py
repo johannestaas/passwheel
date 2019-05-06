@@ -1,7 +1,9 @@
 import os
+import sys
 import json
 from getpass import getpass
-from subprocess import check_output
+
+from nacl.exceptions import CryptoError
 
 from .crypto import encrypt, decrypt
 
@@ -20,20 +22,33 @@ class Wheel:
             with open(self.path, 'rb') as f:
                 self.wheel = f.read()
         else:
-            with open(self.path, 'wb') as f:
-                f.write(b'')
-            self.wheel = b''
+            self.wheel = self.create_wheel()
 
-    def get_pass(self):
-        return getpass().encode('utf8')
+    def create_wheel(self):
+        print(
+            '{} doesnt exist, initializing.\n'
+            'Please create master password.'.format(self.path)
+        )
+        pw = self.get_pass(prompt='master password: ', verify=True)
+        self.wheel = self.encrypt_wheel({}, pw)
 
-    def random_password(self):
-        return check_output(['passgen', '-w', '2']).strip()
+    def get_pass(self, prompt=None, verify=False):
+        if not prompt:
+            prompt = 'password: '
+        while True:
+            pw = getpass(prompt).encode('utf8')
+            if not verify:
+                return pw
+            pw2 = getpass('verify {}'.format(prompt)).encode('utf8')
+            if pw == pw2:
+                return pw
+            print('password mismatch')
 
     def decrypt_wheel(self, pw):
-        if len(self.wheel) == 0:
-            return {}
-        plaintext = decrypt(pw, self.wheel)
+        try:
+            plaintext = decrypt(pw, self.wheel)
+        except CryptoError:
+            sys.exit('Unlock failed!')
         return json.loads(plaintext.decode('utf8'))
 
     def encrypt_wheel(self, data, pw):
@@ -41,24 +56,30 @@ class Wheel:
         ciphertext = encrypt(pw, plaintext)
         with open(self.path, 'wb') as f:
             f.write(ciphertext)
+        return ciphertext
 
     def add_login(self, service, username, password):
-        pw = self.get_pass()
+        pw = self.get_pass(prompt='unlock: ')
         data = self.decrypt_wheel(pw)
         data[service] = data.get(service) or {}
         if isinstance(password, bytes):
             password = password.decode('utf8')
         data[service][username] = password
-        self.encrypt_wheel(data, pw)
+        self.wheel = self.encrypt_wheel(data, pw)
 
     def get_login(self, service):
-        pw = self.get_pass()
+        pw = self.get_pass(prompt='unlock: ')
         data = self.decrypt_wheel(pw)
         logins = data.get(service) or {}
         return logins.items()
 
     def rm_login(self, service, login):
-        pw = self.get_pass()
+        pw = self.get_pass(prompt='unlock: ')
         data = self.decrypt_wheel(pw)
-        del data[service][login]
-        self.encrypt_wheel(data, pw)
+        if login is None:
+            del data[service]
+        else:
+            del data[service][login]
+            if not data[service]:
+                del data[service]
+        self.wheel = self.encrypt_wheel(data, pw)
