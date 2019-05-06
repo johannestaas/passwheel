@@ -30,26 +30,35 @@ class Wheel:
     def random_password(self):
         return check_output(['passgen', '-w', '2']).strip()
 
-    def decrypt_wheel(self):
+    def decrypt_wheel(self, pw):
         if len(self.wheel) == 0:
             return {}
-        plaintext = decrypt(self.get_pass(), self.wheel)
+        plaintext = decrypt(pw, self.wheel)
         return json.loads(plaintext.decode('utf8'))
 
-    def encrypt_wheel(self, data):
+    def encrypt_wheel(self, data, pw):
         plaintext = json.dumps(data).encode('utf8')
-        ciphertext = encrypt(self.get_pass(), plaintext)
+        ciphertext = encrypt(pw, plaintext)
         with open(self.path, 'wb') as f:
             f.write(ciphertext)
 
     def add_login(self, service, username, password):
-        data = self.decrypt_wheel()
+        pw = self.get_pass()
+        data = self.decrypt_wheel(pw)
         data[service] = data.get(service) or {}
+        if isinstance(password, bytes):
+            password = password.decode('utf8')
         data[service][username] = password
-        self.encrypt_wheel(data)
+        self.encrypt_wheel(data, pw)
 
     def get_login(self, service):
-        data = self.decrypt_wheel()
+        pw = self.get_pass()
+        data = self.decrypt_wheel(pw)
         logins = data.get(service) or {}
-        for key, val in logins.items():
-            print('username: {key}\npassword: {val}'.format(key=key, val=val))
+        return logins.items()
+
+    def rm_login(self, service, login):
+        pw = self.get_pass()
+        data = self.decrypt_wheel(pw)
+        del data[service][login]
+        self.encrypt_wheel(data, pw)
