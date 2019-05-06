@@ -40,6 +40,7 @@ setup(
     ],
     install_requires=[
         'pynacl',
+        'colorama',
     ],
     entry_points={
         'console_scripts': [

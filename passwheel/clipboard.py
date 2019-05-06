@@ -1,15 +1,17 @@
-from subprocess import Popen, PIPE, check_output
+from subprocess import Popen, PIPE
 
-
-def which(binary):
-    return bool(check_output(['which', binary]).strip())
+from .util import has_binary, warning, get_os
 
 
 def copy(s):
     if isinstance(s, str):
         s = s.encode('utf8')
-    if not which('xclip'):
-        print('xclip not installed, cant modify clipboard')
-        return None
-    Popen(['xclip', '-selection', 'clipboard'], stdin=PIPE).communicate(s)
-    return True
+    if get_os() == 'linux':
+        if not has_binary('xclip'):
+            warning('xclip not installed, cant modify clipboard')
+            return False
+        Popen(['xclip', '-selection', 'clipboard'], stdin=PIPE).communicate(s)
+        return True
+    else:
+        warning('passwheel only supports linux for modifying the clipboard')
+    return False

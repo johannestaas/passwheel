@@ -5,6 +5,7 @@ from getpass import getpass
 
 from nacl.exceptions import CryptoError
 
+from .util import error
 from .crypto import encrypt, decrypt
 
 
@@ -48,7 +49,8 @@ class Wheel:
         try:
             plaintext = decrypt(pw, self.wheel)
         except CryptoError:
-            sys.exit('Unlock failed!')
+            error('unlock failed!')
+            sys.exit(1)
         return json.loads(plaintext.decode('utf8'))
 
     def encrypt_wheel(self, data, pw):
