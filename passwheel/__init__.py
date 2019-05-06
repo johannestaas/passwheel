@@ -13,6 +13,7 @@ __copyright__ = 'Copyright 2019 Johan Nestaas'
 
 from .storage import Wheel
 from .passgen import gen_password
+from .clipboard import copy
 
 
 def main():
@@ -50,6 +51,8 @@ def main():
     elif args.cmd == 'add':
         if args.gen_password:
             add_pw = gen_password(2, 3)
+            if copy(add_pw):
+                print('password copied to clipboard')
         else:
             add_pw = wheel.get_pass(prompt='new password: ', verify=True)
         wheel.add_login(args.service, args.username, add_pw)
