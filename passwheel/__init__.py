@@ -12,6 +12,7 @@ __license__ = 'GPLv3'
 __copyright__ = 'Copyright 2019 Johan Nestaas'
 
 from .storage import Wheel
+from .passgen import gen_password
 
 
 def main():
@@ -26,6 +27,7 @@ def main():
     p = subs.add_parser('add', help='add a login')
     p.add_argument('service', help='service/website')
     p.add_argument('username', help='login')
+    p.add_argument('--gen-password', '-g', action='store_true')
     # get password manually
     p = subs.add_parser('rm', help='remove a service or login')
     p.add_argument('service', help='service/website')
@@ -46,7 +48,10 @@ def main():
                 else:
                     print('  {}: {}'.format(user, pw))
     elif args.cmd == 'add':
-        add_pw = wheel.get_pass(prompt='new password: ', verify=True)
+        if args.gen_password:
+            add_pw = gen_password(2, 3)
+        else:
+            add_pw = wheel.get_pass(prompt='new password: ', verify=True)
         wheel.add_login(args.service, args.username, add_pw)
     elif args.cmd == 'rm':
         wheel.rm_login(args.service, args.username)
