@@ -85,7 +85,11 @@ Use --help/-h to view info on the arguments::
 Release Notes
 -------------
 
+:0.1.1:
+  - Add mac support for clipboard copying.
+  - Add service filter to ``dump``
+  - Add username filter and ``--copy`` to ``get`` command
 :0.1.0:
-    Project beta release.
+  - Project beta release.
 :0.0.1:
-    Project created.
+  - Project created.
