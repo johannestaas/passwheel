@@ -11,10 +11,12 @@ __author__ = 'Johan Nestaas <johannestaas@gmail.com>'
 __license__ = 'GPLv3'
 __copyright__ = 'Copyright 2019 Johan Nestaas'
 
+import sys
+
 from .wheel import Wheel
 from .passgen import gen_password
 from .clipboard import copy
-from .util import info, warning
+from .util import info, warning, error
 
 
 def main():
@@ -48,8 +50,15 @@ def main():
 
     p = subs.add_parser('get', help='fetch creds for service/website')
     p.add_argument('service', help='service/website')
+    p.add_argument('username', nargs='?', default=None, help='login name')
+    p.add_argument(
+        '--copy', '-c', action='store_true',
+        help='copy to clipboard',
+    )
 
     p = subs.add_parser('dump', help='dump all decrypted credentials')
+    p.add_argument('service', nargs='?', default=None, help='service/website')
+
     p.add_argument(
         '--no-passwords', '-n', action='store_true',
         help='dont print passwords',
@@ -60,8 +69,14 @@ def main():
     if args.cmd == 'dump':
         pw = wheel.get_pass(prompt='unlock: ')
         data = wheel.decrypt_wheel(pw)
+        if args.service:
+            data = {
+                k: v
+                for k, v in data.items()
+                if k.lower() == args.service.lower()
+            }
         if not data:
-            warning('no passwords stored.')
+            warning('no passwords found.')
         else:
             for service, logins in data.items():
                 print(service)
@@ -84,16 +99,48 @@ def main():
             ))
             if copy(add_pw):
                 info('password copied to clipboard')
+            else:
+                warning("couldn't copy to clipboard, please run `get` command")
         wheel.add_login(args.service, args.username, add_pw)
     elif args.cmd == 'rm':
         wheel.rm_login(args.service, args.username)
     elif args.cmd == 'get':
-        logins = wheel.get_login(args.service)
+        logins = sorted(wheel.get_login(args.service).items())
+        if args.username:
+            logins = [
+                (user, pw)
+                for user, pw in logins
+                if user == args.username
+            ]
         if not logins:
-            warning('service {!r} not found'.format(args.service))
+            warning('{!r}::{!r} not found'.format(
+                args.service,
+                args.username or '*',
+            ))
+            sys.exit(1)
+        if args.copy:
+            if len(logins) > 1:
+                users = sorted([x[0] for x in logins])
+                warning(
+                    '{} logins found, please specify user from: {}'
+                    .format(len(logins), ', '.join(users))
+                )
+                sys.exit(2)
+            user, pw = logins[0]
+            if copy(pw):
+                info('copied password to clipboard for user:')
+                print(user)
+            else:
+                error('couldnt copy password to clipboard. Please remove -c.')
+                sys.exit(3)
         else:
-            for key, val in logins:
-                print('{}|{}'.format(key, val))
+            if args.username:
+                # Just print the first and only password.
+                print(logins[0][1])
+            else:
+                # Dump the users and passwords for this service.
+                for key, val in logins:
+                    print('{}|{}'.format(key, val))
     else:
         parser.print_usage()
 

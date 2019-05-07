@@ -12,6 +12,12 @@ def copy(s):
             return False
         Popen(['xclip', '-selection', 'clipboard'], stdin=PIPE).communicate(s)
         return True
+    elif get_os() == 'darwin':
+        if not has_binary('pbcopy'):
+            warning('pbcopy not installed, cant modify clipboard')
+            return False
+        Popen(['pbcopy'], stdin=PIPE).communicate(s)
+        return True
     else:
         warning('passwheel only supports linux for modifying the clipboard')
     return False

@@ -72,8 +72,7 @@ class Wheel:
     def get_login(self, service):
         pw = self.get_pass(prompt='unlock: ')
         data = self.decrypt_wheel(pw)
-        logins = data.get(service) or {}
-        return logins.items()
+        return data.get(service) or {}
 
     def rm_login(self, service, login):
         pw = self.get_pass(prompt='unlock: ')
