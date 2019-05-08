@@ -5,7 +5,7 @@ A password and secret personal storage tool.
 '''
 
 __title__ = 'passwheel'
-__version__ = '0.1.1'
+__version__ = '0.1.2'
 __all__ = ('Wheel',)
 __author__ = 'Johan Nestaas <johannestaas@gmail.com>'
 __license__ = 'GPLv3'
