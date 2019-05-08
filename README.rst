@@ -85,6 +85,8 @@ Use --help/-h to view info on the arguments::
 Release Notes
 -------------
 
+:0.1.2:
+  - Add ``changepw`` command to change master password.
 :0.1.1:
   - Add mac support for clipboard copying.
   - Add service filter to ``dump``
