@@ -69,6 +69,12 @@ class Wheel:
         data[service][username] = password
         self.wheel = self.encrypt_wheel(data, pw)
 
+    def change_password(self):
+        pw = self.get_pass(prompt='unlock: ')
+        data = self.decrypt_wheel(pw)
+        new_pw = self.get_pass(prompt='new master password: ', verify=True)
+        self.wheel = self.encrypt_wheel(data, new_pw)
+
     def get_login(self, service):
         pw = self.get_pass(prompt='unlock: ')
         data = self.decrypt_wheel(pw)

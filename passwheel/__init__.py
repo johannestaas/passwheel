@@ -58,11 +58,13 @@ def main():
 
     p = subs.add_parser('dump', help='dump all decrypted credentials')
     p.add_argument('service', nargs='?', default=None, help='service/website')
-
     p.add_argument(
         '--no-passwords', '-n', action='store_true',
         help='dont print passwords',
     )
+
+    p = subs.add_parser('changepw', help='change master password')
+
     args = parser.parse_args()
 
     wheel = Wheel()
@@ -141,6 +143,8 @@ def main():
                 # Dump the users and passwords for this service.
                 for key, val in logins:
                     print('{}|{}'.format(key, val))
+    elif args.cmd == 'changepw':
+        wheel.change_password()
     else:
         parser.print_usage()
 
