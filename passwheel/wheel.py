@@ -33,6 +33,9 @@ class Wheel:
         pw = self.get_pass(prompt='master password: ', verify=True)
         self.wheel = self.encrypt_wheel({}, pw)
 
+    def get_unlock_pw(self):
+        return self.get_pass(prompt='unlock: ')
+
     def get_pass(self, prompt=None, verify=False):
         if not prompt:
             prompt = 'password: '
@@ -61,7 +64,7 @@ class Wheel:
         return ciphertext
 
     def add_login(self, service, username, password):
-        pw = self.get_pass(prompt='unlock: ')
+        pw = self.get_unlock_pw()
         data = self.decrypt_wheel(pw)
         data[service] = data.get(service) or {}
         if isinstance(password, bytes):
@@ -70,18 +73,18 @@ class Wheel:
         self.wheel = self.encrypt_wheel(data, pw)
 
     def change_password(self):
-        pw = self.get_pass(prompt='unlock: ')
+        pw = self.get_unlock_pw()
         data = self.decrypt_wheel(pw)
         new_pw = self.get_pass(prompt='new master password: ', verify=True)
         self.wheel = self.encrypt_wheel(data, new_pw)
 
     def get_login(self, service):
-        pw = self.get_pass(prompt='unlock: ')
+        pw = self.get_unlock_pw()
         data = self.decrypt_wheel(pw)
         return data.get(service) or {}
 
     def rm_login(self, service, login):
-        pw = self.get_pass(prompt='unlock: ')
+        pw = self.get_unlock_pw()
         data = self.decrypt_wheel(pw)
         if login is None:
             del data[service]
