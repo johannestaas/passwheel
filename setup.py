@@ -11,7 +11,7 @@ def read(fname):
 
 setup(
     name="passwheel",
-    version="0.2.0",
+    version="0.3.0",
     description="A password and secret personal storage tool.",
     author="Johan Nestaas",
     author_email="johannestaas@gmail.com",

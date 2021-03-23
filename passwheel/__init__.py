@@ -5,15 +5,16 @@ A password and secret personal storage tool.
 '''
 
 __title__ = 'passwheel'
-__version__ = '0.1.2'
+__version__ = '0.3.0'
 __all__ = ('Wheel',)
 __author__ = 'Johan Nestaas <johannestaas@gmail.com>'
 __license__ = 'GPLv3'
 __copyright__ = 'Copyright 2019 Johan Nestaas'
 
+import os
 import sys
 
-from .wheel import Wheel
+from .wheel import Wheel, DEFAULT_UNLOCKED
 from .passgen import gen_password
 from .clipboard import copy
 from .util import info, warning, error
@@ -59,6 +60,13 @@ def main():
     p = subs.add_parser('find', help='find creds with fuzzy matching')
     p.add_argument('query', help='query for service/website')
 
+    p = subs.add_parser(
+        'unlock',
+        help='unlock the wheel (only do this temporarily!)'
+    )
+
+    p = subs.add_parser('lock', help='lock the wheel again')
+
     p = subs.add_parser('dump', help='dump all decrypted credentials')
     p.add_argument('service', nargs='?', default=None, help='service/website')
     p.add_argument(
@@ -71,9 +79,16 @@ def main():
     args = parser.parse_args()
 
     wheel = Wheel()
-    if args.cmd == 'dump':
+    if args.cmd == 'lock':
+        wheel.lock_wheel()
+    elif args.cmd == 'unlock':
         pw = wheel.get_pass(prompt='unlock: ')
-        data = wheel.decrypt_wheel(pw)
+        wheel.unlock_wheel(pw)
+    elif args.cmd == 'dump':
+        pw = None
+        if not os.path.isfile(DEFAULT_UNLOCKED):
+            pw = wheel.get_pass(prompt='unlock: ')
+        data = wheel.decrypt_wheel(pw=pw)
         if args.service:
             data = {
                 k: v

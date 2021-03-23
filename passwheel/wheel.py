@@ -11,6 +11,8 @@ from .crypto import encrypt, decrypt
 
 # Should match at least this much ratio with fuzzy string matching.
 RATIO = 85
+DEFAULT_LOCKED = os.path.expanduser('~/.passwheel')
+DEFAULT_UNLOCKED = os.path.expanduser('~/.passwheel.json')
 
 
 class Wheel:
@@ -20,7 +22,10 @@ class Wheel:
 
     @property
     def path(self):
-        return os.path.expanduser('~/.passwheel')
+        """
+        If in the future, we support a different path.
+        """
+        return DEFAULT_LOCKED
 
     def load_or_create_wheel(self):
         if os.path.exists(self.path):
@@ -52,7 +57,14 @@ class Wheel:
                 return pw
             print('password mismatch')
 
-    def decrypt_wheel(self, pw):
+    def decrypt_wheel(self, pw=None):
+        if pw is None:
+            if os.path.isfile(DEFAULT_UNLOCKED):
+                with open(DEFAULT_UNLOCKED) as f:
+                    return json.load(f)
+            else:
+                error('password is None but no unlocked wheel exists')
+                sys.exit(1)
         try:
             plaintext = decrypt(pw, self.wheel)
         except CryptoError:
@@ -69,7 +81,7 @@ class Wheel:
 
     def add_login(self, service, username, password):
         pw = self.get_unlock_pw()
-        data = self.decrypt_wheel(pw)
+        data = self.decrypt_wheel(pw=pw)
         data[service] = data.get(service) or {}
         if isinstance(password, bytes):
             password = password.decode('utf8')
@@ -78,18 +90,23 @@ class Wheel:
 
     def change_password(self):
         pw = self.get_unlock_pw()
-        data = self.decrypt_wheel(pw)
+        data = self.decrypt_wheel(pw=pw)
         new_pw = self.get_pass(prompt='new master password: ', verify=True)
         self.wheel = self.encrypt_wheel(data, new_pw)
 
     def get_login(self, service):
+        if os.path.isfile(DEFAULT_UNLOCKED):
+            data = self.decrypt_wheel()
+            return data.get(service) or {}
         pw = self.get_unlock_pw()
-        data = self.decrypt_wheel(pw)
+        data = self.decrypt_wheel(pw=pw)
         return data.get(service) or {}
 
     def find_login(self, query):
-        pw = self.get_unlock_pw()
-        data = self.decrypt_wheel(pw)
+        pw = None
+        if not os.path.isfile(DEFAULT_UNLOCKED):
+            pw = self.get_unlock_pw()
+        data = self.decrypt_wheel(pw=pw)
         ratios = sorted(
             (
                 (ratio(query, key), key)
@@ -110,7 +127,7 @@ class Wheel:
 
     def rm_login(self, service, login):
         pw = self.get_unlock_pw()
-        data = self.decrypt_wheel(pw)
+        data = self.decrypt_wheel(pw=pw)
         if login is None:
             del data[service]
         else:
@@ -118,3 +135,18 @@ class Wheel:
             if not data[service]:
                 del data[service]
         self.wheel = self.encrypt_wheel(data, pw)
+
+    def unlock_wheel(self, pw):
+        try:
+            plaintext = decrypt(pw, self.wheel)
+        except CryptoError:
+            error('unlock failed!')
+            sys.exit(1)
+        os.umask(0o177)
+        with open(DEFAULT_UNLOCKED, 'wb') as f:
+            f.write(plaintext)
+        return DEFAULT_UNLOCKED
+
+    def lock_wheel(self):
+        if os.path.isfile(DEFAULT_UNLOCKED):
+            os.remove(DEFAULT_UNLOCKED)
