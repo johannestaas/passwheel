@@ -11,7 +11,7 @@ def read(fname):
 
 setup(
     name="passwheel",
-    version="0.1.2",
+    version="0.2.0",
     description="A password and secret personal storage tool.",
     author="Johan Nestaas",
     author_email="johannestaas@gmail.com",
@@ -41,6 +41,7 @@ setup(
     install_requires=[
         'pynacl',
         'colorama',
+        'fuzzywuzzy[speedup]',
     ],
     entry_points={
         'console_scripts': [

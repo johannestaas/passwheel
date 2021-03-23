@@ -3,10 +3,14 @@ import sys
 import json
 from getpass import getpass
 
+from fuzzywuzzy.fuzz import ratio
 from nacl.exceptions import CryptoError
 
 from .util import error
 from .crypto import encrypt, decrypt
+
+# Should match at least this much ratio with fuzzy string matching.
+RATIO = 85
 
 
 class Wheel:
@@ -82,6 +86,27 @@ class Wheel:
         pw = self.get_unlock_pw()
         data = self.decrypt_wheel(pw)
         return data.get(service) or {}
+
+    def find_login(self, query):
+        pw = self.get_unlock_pw()
+        data = self.decrypt_wheel(pw)
+        ratios = sorted(
+            (
+                (ratio(query, key), key)
+                for key in data
+            ),
+            reverse=True,
+        )
+        threshold = min(RATIO, ratios[0][0])
+        top = [
+            key
+            for r, key in ratios
+            if r >= threshold
+        ]
+        return [
+            (key, data[key])
+            for key in top
+        ]
 
     def rm_login(self, service, login):
         pw = self.get_unlock_pw()

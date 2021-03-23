@@ -56,6 +56,9 @@ def main():
         help='copy to clipboard',
     )
 
+    p = subs.add_parser('find', help='find creds with fuzzy matching')
+    p.add_argument('query', help='query for service/website')
+
     p = subs.add_parser('dump', help='dump all decrypted credentials')
     p.add_argument('service', nargs='?', default=None, help='service/website')
     p.add_argument(
@@ -106,6 +109,11 @@ def main():
         wheel.add_login(args.service, args.username, add_pw)
     elif args.cmd == 'rm':
         wheel.rm_login(args.service, args.username)
+    elif args.cmd == 'find':
+        for service, logins in wheel.find_login(args.query):
+            print('service: {}'.format(service))
+            for key, val in logins.items():
+                print('  {}|{}'.format(key, val))
     elif args.cmd == 'get':
         logins = sorted(wheel.get_login(args.service).items())
         if args.username:
